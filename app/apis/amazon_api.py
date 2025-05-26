@@ -60,178 +60,134 @@ seed_database()
 async def amazon_root():
     return {"message": "Amazon Management System API - All endpoints ready!"}
 
-async def get_price_from_amazon(
-    amazon_id: str,
-    quantity: int = 1,
+@router.post("/get_price")
+async def get_price(
+    id: Optional[str] = None,
+    book_name: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """Get price for a specific Amazon product"""
-    # Find the amazon product
-    amazon_product = db.query(Amazon).filter(Amazon.amazon_id == amazon_id).first()
-    if not amazon_product:
-        raise HTTPException(status_code=404, detail="Product not found")
+    if not id and not book_name:
+        raise HTTPException(status_code=400, detail="Provide either 'id' or 'book_name'")
     
-    # Get price based on product ID (for demo, using amazon.id % price_count)
+    if id:
+        product = db.query(Amazon).filter(Amazon.id == id).first()
+    else:
+        product = db.query(Amazon).filter(Amazon.name == book_name).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
     price_count = db.query(Price).count()
     if price_count == 0:
         raise HTTPException(status_code=404, detail="No prices available")
-    
-    price_id = (amazon_product.id % price_count) + 1
+
+    price_id = (product.id % price_count) + 1
     price_obj = db.query(Price).filter(Price.id == price_id).first()
-    
+
     if not price_obj:
         raise HTTPException(status_code=404, detail="Price not found")
-    
-    total_price = price_obj.price * quantity
-    
-    return {
-        "amazon_id": amazon_id,
-        "product_name": amazon_product.name,
-        "unit_price": price_obj.price,
-        "quantity": quantity,
-        "total_price": total_price,
-        "currency": "INR"
-    }
 
-@router.post("/get_price_from_amazon_by_bookid")
-async def get_price_from_amazon_by_bookid(
-    amazon_id: str,
-    quantity: int = 1,
+    return {            "unit_price": price_obj.price   }
+
+
+@router.get("/name_from_id")
+async def name_from_id(
+    id: str,
     db: Session = Depends(get_db)
 ):
-    """Get price for a specific Amazon product by book ID"""
-    amazon_product = db.query(Amazon).filter(Amazon.amazon_id == amazon_id).first()
+    """Return product name given the Amazon ID"""
+    amazon_product = db.query(Amazon).filter(Amazon.id == id).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    price_count = db.query(Price).count()
-    if price_count == 0:
-        raise HTTPException(status_code=404, detail="No prices available")
-    
-    price_id = (amazon_product.id % price_count) + 1
-    price_obj = db.query(Price).filter(Price.id == price_id).first()
-    
-    if not price_obj:
-        raise HTTPException(status_code=404, detail="Price not found")
-    
-    total_price = price_obj.price * quantity
-    
-    return {
-        "amazon_id": amazon_id,
-        "product_name": amazon_product.name,
-        "unit_price": price_obj.price,
-        "quantity": quantity,
-        "total_price": total_price,
-        "currency": "INR"
-    }
+    return {"id": id, "name": amazon_product.name}
 
-@router.post("/get_price_from_amazon_by_bookname")
-async def get_price_from_amazon_by_bookname(
-    book_name: str,
-    quantity: int = 1,
-    db: Session = Depends(get_db)
-):
-    """Get price for a specific Amazon product by book name"""
-    amazon_product = db.query(Amazon).filter(Amazon.name == book_name).first()
-    if not amazon_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    price_count = db.query(Price).count()
-    if price_count == 0:
-        raise HTTPException(status_code=404, detail="No prices available")
-    
-    price_id = (amazon_product.id % price_count) + 1
-    price_obj = db.query(Price).filter(Price.id == price_id).first()
-    
-    if not price_obj:
-        raise HTTPException(status_code=404, detail="Price not found")
-    
-    total_price = price_obj.price * quantity
-    
-    return {
-        "amazon_id": amazon_product.amazon_id,
-        "product_name": book_name,
-        "unit_price": price_obj.price,
-        "quantity": quantity,
-        "total_price": total_price,
-        "currency": "INR"
-    }
-
-@router.post("/stock_by_name")
-async def stock_by_name(
+@router.get("/id_from_name")
+async def id_from_name(
     name: str,
     db: Session = Depends(get_db)
 ):
-    """Tell me how much stock you have for this book name — I want it all!"""
+    """Return Amazon ID given the product name"""
     amazon_product = db.query(Amazon).filter(Amazon.name == name).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    total_stock = random.randint(5, 100)  # Simulated stock
-    
-    return {
-        "message": f"Hey! For '{name}', we have {total_stock} in stock. Take it all!"
-    }
+    return {"name": name, "id": amazon_product.id}
 
 
 @router.post("/stock_by_id")
 async def stock_by_id(
-    amazon_id: str,
+    id: str,
     db: Session = Depends(get_db)
 ):
     """Tell me how much stock you have for this book id — I want it all!"""
-    amazon_product = db.query(Amazon).filter(Amazon.amazon_id == amazon_id).first()
+    amazon_product = db.query(Amazon).filter(Amazon.id == id).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    total_stock = random.randint(5, 100)  # Simulated stock
-    
-    return {
-        "message": f"Hey! For book ID '{amazon_id}', we have {total_stock} in stock. Take it all!"
-    }
+    total_stock = random.randint(5, 100)    
+    return total_stock
 
-@router.post("/delivery_status_by_name")
-async def delivery_status_by_name(
-    name: str,
+
+
+@router.post("/delivery_status")
+async def delivery_status(
+    pincode: str,
     db: Session = Depends(get_db)
 ):
-    amazon_product = db.query(Amazon).filter(Amazon.name == name).first()
-    if not amazon_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    # Random status for demonstration: 1, 0, or -1
-    status = random.choice([1, 0, -1])
-    
+    # Delivery messages mapping
     messages = {
         1: "Can be delivered today",
         0: "Deliverable",
         -1: "Not deliverable"
     }
 
+    # Check deliverability for the pincode
+    delivery_info = db.query(Deliverable).filter(Deliverable.pincode == pincode).first()
+
+    if not delivery_info:
+        status = -1
+    elif delivery_info.delivery_time == 1:
+        status = 1
+    else:
+        status = 0
+
     return {
-        "message": f"Delivery status for '{name}': {messages[status]}",
+        "message": f"Delivery status to pincode '{pincode}': {messages[status]}",
         "status_code": status
     }
 
-
-@router.post("/delivery_status_by_id")
-async def delivery_status_by_id(
-    amazon_id: str,
+@router.post("/discount")
+async def calculate_discount(
+    quantity: int,
+    name: Optional[str] = None,
+    id: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    amazon_product = db.query(Amazon).filter(Amazon.amazon_id == amazon_id).first()
-    if not amazon_product:
+    if not name and not id:
+        raise HTTPException(status_code=400, detail="Either 'name' or 'id' must be provided")
+
+    # Get product
+    if name:
+        product = db.query(Amazon).filter(Amazon.name == name).first()
+    else:
+        product = db.query(Amazon).filter(Amazon.id == id).first()
+
+    if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    status = random.choice([1, 0, -1])
+    total_cost = product.price * quantity
 
-    messages = {
-        1: "Can be delivered today",
-        0: "Deliverable",
-        -1: "Not deliverable"
-    }
+    # Get discount
+    discount = db.query(Discount).filter(
+        Discount.cost_from <= total_cost,
+        Discount.cost_to > total_cost
+    ).first()
+
+    discount_percent = discount.percent_off if discount else 0
+    discounted_price = total_cost * (1 - discount_percent / 100)
 
     return {
-        "message": f"Delivery status for book ID '{amazon_id}': {messages[status]}",
-        "status_code": status
+        "original_price": total_cost,
+        "discounted_price": discounted_price
     }

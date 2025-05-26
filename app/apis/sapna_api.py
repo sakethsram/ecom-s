@@ -60,143 +60,134 @@ seed_database()
 async def sapna_root():
     return {"message": "Sapna Management System API - All endpoints ready!"}
 
-@router.post("/get_price_from_sapna_by_bookid")
-async def get_price_from_sapna_by_bookid(
-    sapna_id: str,
-    quantity: int = 1,
+
+@router.post("/get_price")
+async def get_price(
+    id: Optional[str] = None,
+    book_name: Optional[str] = None,
     db: Session = Depends(get_sapna_db)
 ):
-    """Get price for a specific sapna product by book ID"""
-    sapna_product = db.query(sapna).filter(sapna.sapna_id == sapna_id).first()
-    if not sapna_product:
+    if not id and not book_name:
+        raise HTTPException(status_code=400, detail="Provide either 'id' or 'book_name'")
+    
+    if id:
+        product = db.query(sapna).filter(sapna.id == id).first()
+    else:
+        product = db.query(sapna).filter(sapna.name == book_name).first()
+
+    if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
     price_count = db.query(Price).count()
     if price_count == 0:
         raise HTTPException(status_code=404, detail="No prices available")
 
-    price_id = (sapna_product.id % price_count) + 1
+    price_id = (product.id % price_count) + 1
     price_obj = db.query(Price).filter(Price.id == price_id).first()
 
     if not price_obj:
         raise HTTPException(status_code=404, detail="Price not found")
 
-    total_price = price_obj.price * quantity
+    return {            "unit_price": price_obj.price   }
 
-    return {
-        "sapna_id": sapna_id,
-        "product_name": sapna_product.name,
-        "unit_price": price_obj.price,
-        "quantity": quantity,
-        "total_price": total_price,
-        "currency": "INR"
-    }
 
-@router.post("/get_price_from_sapna_by_bookname")
-async def get_price_from_sapna_by_bookname(
-    book_name: str,
-    quantity: int = 1,
+@router.get("/name_from_id")
+async def name_from_id(
+    id: str,
     db: Session = Depends(get_sapna_db)
 ):
-    """Get price for a specific sapna product by book name"""
-    sapna_product = db.query(sapna).filter(sapna.name == book_name).first()
+    """Return product name given the sapna ID"""
+    sapna_product = db.query(sapna).filter(sapna.id == id).first()
     if not sapna_product:
         raise HTTPException(status_code=404, detail="Product not found")
+    
+    return {"id": id, "name": sapna_product.name}
 
-    price_count = db.query(Price).count()
-    if price_count == 0:
-        raise HTTPException(status_code=404, detail="No prices available")
 
-    price_id = (sapna_product.id % price_count) + 1
-    price_obj = db.query(Price).filter(Price.id == price_id).first()
-
-    if not price_obj:
-        raise HTTPException(status_code=404, detail="Price not found")
-
-    total_price = price_obj.price * quantity
-
-    return {
-        "sapna_id": sapna_product.sapna_id,
-        "product_name": book_name,
-        "unit_price": price_obj.price,
-        "quantity": quantity,
-        "total_price": total_price,
-        "currency": "INR"
-    }
-
-@router.post("/stock_by_name")
-async def stock_by_name(
+@router.get("/id_from_name")
+async def id_from_name(
     name: str,
     db: Session = Depends(get_sapna_db)
 ):
-    """Tell me how much stock you have for this book name — I want it all!"""
+    """Return sapna ID given the product name"""
     sapna_product = db.query(sapna).filter(sapna.name == name).first()
     if not sapna_product:
         raise HTTPException(status_code=404, detail="Product not found")
+    
+    return {"name": name, "id": sapna_product.id}
 
-    total_stock = random.randint(5, 100)  # Simulated stock
-
-    return {
-        "message": f"Hey! For '{name}', we have {total_stock} in stock. Take it all!"
-    }
 
 @router.post("/stock_by_id")
 async def stock_by_id(
-    sapna_id: str,
+    id: str,
     db: Session = Depends(get_sapna_db)
 ):
     """Tell me how much stock you have for this book id — I want it all!"""
-    sapna_product = db.query(sapna).filter(sapna.sapna_id == sapna_id).first()
+    sapna_product = db.query(sapna).filter(sapna.id == id).first()
     if not sapna_product:
         raise HTTPException(status_code=404, detail="Product not found")
+    
+    total_stock = random.randint(5, 100)    
+    return total_stock
 
-    total_stock = random.randint(5, 100)  # Simulated stock
-
-    return {
-        "message": f"Hey! For book ID '{sapna_id}', we have {total_stock} in stock. Take it all!"
-    }
-
-@router.post("/delivery_status_by_name")
-async def delivery_status_by_name(
-    name: str,
+@router.post("/delivery_status")
+async def delivery_status(
+    pincode: str,
     db: Session = Depends(get_sapna_db)
 ):
-    sapna_product = db.query(sapna).filter(sapna.name == name).first()
-    if not sapna_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    # Random status for demonstration: 1, 0, or -1
-    status = random.choice([1, 0, -1])
-
+    # Delivery messages mapping
     messages = {
         1: "Can be delivered today",
         0: "Deliverable",
         -1: "Not deliverable"
     }
 
+    # Check deliverability for the pincode
+    delivery_info = db.query(Deliverable).filter(Deliverable.pincode == pincode).first()
+
+    if not delivery_info:
+        status = -1
+    elif delivery_info.delivery_time == 1:
+        status = 1
+    else:
+        status = 0
+
     return {
-        "message": f"Delivery status for '{name}': {messages[status]}",
+        "message": f"Delivery status to pincode '{pincode}': {messages[status]}",
         "status_code": status
     }
 
-@router.post("/delivery_status_by_id")
-async def delivery_status_by_id(
-    sapna_id: str,
+@router.post("/discount")
+async def calculate_discount(
+    quantity: int,
+    name: Optional[str] = None,
+    id: Optional[str] = None,
     db: Session = Depends(get_sapna_db)
 ):
-    sapna_product = db.query(sapna).filter(sapna.sapna_id == sapna_id).first()
-    if not sapna_product:
+    if not name and not id:
+        raise HTTPException(status_code=400, detail="Either 'name' or 'id' must be provided")
+
+    # Get product
+    if name:
+        product = db.query(sapna).filter(sapna.name == name).first()
+    else:
+        product = db.query(sapna).filter(sapna.id == id).first()
+
+    if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    status = random.choice([1, 0, -1])
+    total_cost = product.price * quantity
 
-    messages = {
-        1: "Can be delivered today",
-        0: "Deliverable",
-        -1: "Not deliverable"
-    }
+    # Get discount
+    discount = db.query(Discount).filter(
+        Discount.cost_from <= total_cost,
+        Discount.cost_to > total_cost
+    ).first()
+
+    discount_percent = discount.percent_off if discount else 0
+    discounted_price = total_cost * (1 - discount_percent / 100)
 
     return {
-        "message": f"Delivery status for book ID '{sapna_id}': {messages[status]}",
-        "status_code": status
+        "original_price": total_cost,
+        "discounted_price": discounted_price
     }

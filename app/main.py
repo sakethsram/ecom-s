@@ -5,11 +5,7 @@ from app.apis.amazon_api import router as amazon_router
 from app.apis.flipkart_api import router as flipkart_router
 from app.apis.sapna_api import router as sapna_router
 
-app = FastAPI(
-    title="Multi-Store Management System",
-    description="API for managing Amazon, Flipkart, and Sapna products",
-    version="1.0.0"
-)
+app = FastAPI()
 
 # CORS middleware
 app.add_middleware(
@@ -21,9 +17,9 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(amazon_router, prefix="/api/amazon", tags=["Amazon"])
-app.include_router(flipkart_router, prefix="/api/flipkart", tags=["Flipkart"])
-app.include_router(sapna_router, prefix="/api/sapna", tags=["Sapna"])
+app.include_router(amazon_router, prefix="/amazon", tags=["Amazon"])
+app.include_router(flipkart_router, prefix="/flipkart", tags=["Flipkart"])
+app.include_router(sapna_router, prefix="/sapna", tags=["Sapna"])
 
 @app.get("/")
 async def root():
@@ -31,14 +27,13 @@ async def root():
         "message": "Multi-Store Management System API",
         "available_stores": ["Amazon", "Flipkart", "Sapna"],
         "endpoints": {
-            "amazon": "/api/amazon/",
-            "flipkart": "/api/flipkart/",
-            "sapna": "/api/sapna/"
+            "amazon": "/amazon/",
+            "flipkart": "/flipkart/",
+            "sapna": "/sapna/"
         }
     }
 
 if __name__ == "__main__":
-    # Run the application
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
@@ -46,4 +41,3 @@ if __name__ == "__main__":
         reload=True,
         log_level="debug"
     )
-

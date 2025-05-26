@@ -60,144 +60,171 @@ seed_database()
 async def flipkart_root():
     return {"message": "Flipkart Management System API - All endpoints ready!"}
 
-@router.post("/get_price_from_flipkart_by_bookid")
-async def get_price_from_flipkart_by_bookid(
-    flipkart_id: str,
-    quantity: int = 1,
+@router.post("/get_price")
+async def get_price(
+    id: Optional[str] = None,
+    book_name: Optional[str] = None,
     db: Session = Depends(get_flipkart_db)
 ):
-    """Get price for a specific flipkart product by book ID"""
-    flipkart_product = db.query(flipkart).filter(flipkart.flipkart_id == flipkart_id).first()
-    if not flipkart_product:
+    if not id and not book_name:
+        raise HTTPException(status_code=400, detail="Provide either 'id' or 'book_name'")
+    
+    if id:
+        product = db.query(flipkart).filter(flipkart.id == id).first()
+    else:
+        product = db.query(flipkart).filter(flipkart.name == book_name).first()
+
+    if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
     price_count = db.query(Price).count()
     if price_count == 0:
         raise HTTPException(status_code=404, detail="No prices available")
 
-    price_id = (flipkart_product.id % price_count) + 1
+    price_id = (product.id % price_count) + 1
     price_obj = db.query(Price).filter(Price.id == price_id).first()
 
     if not price_obj:
         raise HTTPException(status_code=404, detail="Price not found")
 
-    total_price = price_obj.price * quantity
+    return {            "unit_price": price_obj.price   }
 
-    return {
-        "flipkart_id": flipkart_id,
-        "product_name": flipkart_product.name,
-        "unit_price": price_obj.price,
-        "quantity": quantity,
-        "total_price": total_price,
-        "currency": "INR"
-    }
 
-@router.post("/get_price_from_flipkart_by_bookname")
-async def get_price_from_flipkart_by_bookname(
-    book_name: str,
-    quantity: int = 1,
+@router.get("/name_from_id")
+async def name_from_id(
+    id: str,
     db: Session = Depends(get_flipkart_db)
 ):
-    """Get price for a specific flipkart product by book name"""
-    flipkart_product = db.query(flipkart).filter(flipkart.name == book_name).first()
+    """Return product name given the flipkart ID"""
+    flipkart_product = db.query(flipkart).filter(flipkart.id == id).first()
     if not flipkart_product:
         raise HTTPException(status_code=404, detail="Product not found")
+    
+    return {"id": id, "name": flipkart_product.name}
 
-    price_count = db.query(Price).count()
-    if price_count == 0:
-        raise HTTPException(status_code=404, detail="No prices available")
 
-    price_id = (flipkart_product.id % price_count) + 1
-    price_obj = db.query(Price).filter(Price.id == price_id).first()
-
-    if not price_obj:
-        raise HTTPException(status_code=404, detail="Price not found")
-
-    total_price = price_obj.price * quantity
-
-    return {
-        "flipkart_id": flipkart_product.flipkart_id,
-        "product_name": book_name,
-        "unit_price": price_obj.price,
-        "quantity": quantity,
-        "total_price": total_price,
-        "currency": "INR"
-    }
-
-@router.post("/stock_by_name")
-async def stock_by_name(
+@router.get("/id_from_name")
+async def id_from_name(
     name: str,
     db: Session = Depends(get_flipkart_db)
 ):
-    """Tell me how much stock you have for this book name — I want it all!"""
+    """Return flipkart ID given the product name"""
     flipkart_product = db.query(flipkart).filter(flipkart.name == name).first()
     if not flipkart_product:
         raise HTTPException(status_code=404, detail="Product not found")
+    
+    return {"name": name, "id": flipkart_product.id}
 
-    total_stock = random.randint(5, 100)  # Simulated stock
-
-    return {
-        "message": f"Hey! For '{name}', we have {total_stock} in stock. Take it all!"
-    }
 
 @router.post("/stock_by_id")
 async def stock_by_id(
-    flipkart_id: str,
+    id: str,
     db: Session = Depends(get_flipkart_db)
 ):
     """Tell me how much stock you have for this book id — I want it all!"""
-    flipkart_product = db.query(flipkart).filter(flipkart.flipkart_id == flipkart_id).first()
+    flipkart_product = db.query(flipkart).filter(flipkart.id == id).first()
     if not flipkart_product:
         raise HTTPException(status_code=404, detail="Product not found")
-
-    total_stock = random.randint(5, 100)  # Simulated stock
-
-    return {
-        "message": f"Hey! For book ID '{flipkart_id}', we have {total_stock} in stock. Take it all!"
-    }
-
-@router.post("/delivery_status_by_name")
-async def delivery_status_by_name(
-    name: str,
-    db: Session = Depends(get_flipkart_db)
-):
-    flipkart_product = db.query(flipkart).filter(flipkart.name == name).first()
-    if not flipkart_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    # Random status for demonstration: 1, 0, or -1
-    status = random.choice([1, 0, -1])
-
-    messages = {
-        1: "Can be delivered today",
-        0: "Deliverable",
-        -1: "Not deliverable"
-    }
-
-    return {
-        "message": f"Delivery status for '{name}': {messages[status]}",
-        "status_code": status
-    }
-
-@router.post("/delivery_status_by_id")
-async def delivery_status_by_id(
-    flipkart_id: str,
-    db: Session = Depends(get_flipkart_db)
-):
-    flipkart_product = db.query(flipkart).filter(flipkart.flipkart_id == flipkart_id).first()
-    if not flipkart_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    status = random.choice([1, 0, -1])
-
-    messages = {
-        1: "Can be delivered today",
-        0: "Deliverable",
-        -1: "Not deliverable"
-    }
-
-    return {
-        "message": f"Delivery status for book ID '{flipkart_id}': {messages[status]}",
-        "status_code": status
-    }
     
+    total_stock = random.randint(5, 100)    
+    return total_stock
+
+
+@router.post("/delivery_status")
+async def delivery_status(
+    name: Optional[str] = None,
+    id: Optional[str] = None,
+    
+):
+    if not name and not id:
+        raise HTTPException(status_code=400, detail="Either 'name' or 'id' must be provided")
+
+    # Fetch product by name or id
+    if name:
+        flipkart_product = db.query(flipkart).filter(flipkart.name == name).first()
+    else:
+        flipkart_product = db.query(flipkart).filter(flipkart.id == id).first()
+
+    if not flipkart_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Delivery status messages
+    messages = { 1: "Can be delivered today",0: "Deliverable", -1: "Not deliverable"  }
+
+    # Check delivery info using pincode
+    delivery_info = db.query(Deliverable).filter(Deliverable.pincode == flipkart_product.pincode).first()
+
+    if not delivery_info:        status = -1
+    elif delivery_info.delivery_time == 1:
+        status = 1
+    else:        status = 0
+
+    identifier = name if name else id
+
+    return {
+        "message": f"Delivery status for '{identifier}': {messages[status]}",
+        "status_code": status
+    }
+
+
+@router.post("/delivery_status")
+async def delivery_status(
+    pincode: str,
+    db: Session = Depends(get_flipkart_db)
+):
+    # Delivery messages mapping
+    messages = {
+        1: "Can be delivered today",
+        0: "Deliverable",
+        -1: "Not deliverable"
+    }
+
+    # Check deliverability for the pincode
+    delivery_info = db.query(Deliverable).filter(Deliverable.pincode == pincode).first()
+
+    if not delivery_info:
+        status = -1
+    elif delivery_info.delivery_time == 1:
+        status = 1
+    else:
+        status = 0
+
+    return {
+        "message": f"Delivery status to pincode '{pincode}': {messages[status]}",
+        "status_code": status
+    }
+
+@router.post("/discount")
+async def calculate_discount(
+    quantity: int,
+    name: Optional[str] = None,
+    id: Optional[str] = None,
+    db: Session = Depends(get_flipkart_db)
+):
+    if not name and not id:
+        raise HTTPException(status_code=400, detail="Either 'name' or 'id' must be provided")
+
+    # Get product
+    if name:
+        product = db.query(flipkart).filter(flipkart.name == name).first()
+    else:
+        product = db.query(flipkart).filter(flipkart.id == id).first()
+
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    total_cost = product.price * quantity
+
+    # Get discount
+    discount = db.query(Discount).filter(
+        Discount.cost_from <= total_cost,
+        Discount.cost_to > total_cost
+    ).first()
+
+    discount_percent = discount.percent_off if discount else 0
+    discounted_price = total_cost * (1 - discount_percent / 100)
+
+    return {
+        "original_price": total_cost,
+        "discounted_price": discounted_price
+    }
