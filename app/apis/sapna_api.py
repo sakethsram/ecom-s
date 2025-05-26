@@ -4,7 +4,7 @@ from app.database import get_sapna_db, sapna_engine, SapnaSessionLocal
 from app.models import sapna_models
 from app.models.sapna_models import sapna, Price, Deliverable, Discount
 from app.schemas.sapna_schemas import (
-    sapna_SEED_DATA,
+    SAPNA_SEED_DATA,
     PRICE_SEED_DATA,
     DELIVERABLE_SEED_DATA,
     DISCOUNT_SEED_DATA
@@ -21,7 +21,7 @@ def seed_database():
         # Check if data already exists
         if db.query(sapna).count() == 0:
             # Seed sapna products
-            for item in sapna_SEED_DATA:
+            for item in SAPNA_SEED_DATA:
                 sapna_product = sapna(**item)
                 db.add(sapna_product)
 

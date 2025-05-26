@@ -62,8 +62,7 @@ class Discount(DiscountBase):
     class Config:
         from_attributes = True
 
-# Seeding data - Insert only once
-flipkart_SEED_DATA = [
+FLIPKART_SEED_DATA = [
     # Python books
     {'flipkart_id': 'py_001', 'name': 'Python Crash Course', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 1},
     {'flipkart_id': 'py_002', 'name': 'Automate the Boring Stuff with Python', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 2},

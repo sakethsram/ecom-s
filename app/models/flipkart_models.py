@@ -3,8 +3,8 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
 
-class flipkart(Base):
-    __tablename__ = "flipkarts"  # Changed from "flipkart" to "flipkarts"
+class Flipkart(Base):
+    __tablename__ = "flipkart_books"  # Changed from "flipkart" to "flipkarts"
 
     id = Column(Integer, primary_key=True, index=True)
     flipkart_id = Column(String(50), unique=True, index=True, nullable=False)

@@ -2,20 +2,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db, engine, SessionLocal
 from app.models import amazon_models
-from app.models.amazon_models import Amazon, Price, Deliverable, Discount
+from app.models.amazon_models import Amazon, AmazonPrice, AmazonDeliverable, AmazonDiscount  # Updated imports
 from app.schemas.amazon_schemas import (
-    AMAZON_SEED_DATA, 
-    PRICE_SEED_DATA, 
-    DELIVERABLE_SEED_DATA, 
-    DISCOUNT_SEED_DATA
+    AMAZON_SEED_DATA,
+    AMAZON_PRICE_SEED_DATA,  # Updated import names
+    AMAZON_DELIVERABLE_SEED_DATA,  # Updated import names
+    AMAZON_DISCOUNT_SEED_DATA  # Updated import names
 )
 from typing import Optional
 import random
 
 router = APIRouter()
 
-def seed_database():
-    """Seed the database with initial data"""
+def seed_amazon_database():
+    """Seed the Amazon database with initial data"""
     db = SessionLocal()
     try:
         # Check if data already exists
@@ -24,37 +24,37 @@ def seed_database():
             for item in AMAZON_SEED_DATA:
                 amazon_product = Amazon(**item)
                 db.add(amazon_product)
-            
-        if db.query(Price).count() == 0:
-            # Seed Prices
-            for item in PRICE_SEED_DATA:
-                price = Price(**item)
-                db.add(price)
-            
-        if db.query(Deliverable).count() == 0:
-            # Seed Deliverables
-            for item in DELIVERABLE_SEED_DATA:
-                deliverable = Deliverable(**item)
-                db.add(deliverable)
-            
-        if db.query(Discount).count() == 0:
-            # Seed Discounts
-            for item in DISCOUNT_SEED_DATA:
-                discount = Discount(**item)
-                db.add(discount)
-        
+
+        if db.query(AmazonPrice).count() == 0:  # Updated class name
+            # Seed Amazon Prices
+            for item in AMAZON_PRICE_SEED_DATA:  # Updated variable name
+                amazon_price = AmazonPrice(**item)  # Updated class name
+                db.add(amazon_price)
+
+        if db.query(AmazonDeliverable).count() == 0:  # Updated class name
+            # Seed Amazon Deliverables
+            for item in AMAZON_DELIVERABLE_SEED_DATA:  # Updated variable name
+                amazon_deliverable = AmazonDeliverable(**item)  # Updated class name
+                db.add(amazon_deliverable)
+
+        if db.query(AmazonDiscount).count() == 0:  # Updated class name
+            # Seed Amazon Discounts
+            for item in AMAZON_DISCOUNT_SEED_DATA:  # Updated variable name
+                amazon_discount = AmazonDiscount(**item)  # Updated class name
+                db.add(amazon_discount)
+
         db.commit()
-        print("Database seeded successfully!")
-        
+        print("Amazon database seeded successfully!")
+
     except Exception as e:
-        print(f"Error seeding database: {e}")
+        print(f"Error seeding Amazon database: {e}")
         db.rollback()
     finally:
         db.close()
 
-# Create database tables and seed data
+# Create Amazon database tables and seed data
 amazon_models.Base.metadata.create_all(bind=engine)
-seed_database()
+seed_amazon_database()
 
 @router.get("/")
 async def amazon_root():
@@ -68,7 +68,7 @@ async def get_price(
 ):
     if not id and not book_name:
         raise HTTPException(status_code=400, detail="Provide either 'id' or 'book_name'")
-    
+
     if id:
         product = db.query(Amazon).filter(Amazon.id == id).first()
     else:
@@ -77,18 +77,17 @@ async def get_price(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    price_count = db.query(Price).count()
+    price_count = db.query(AmazonPrice).count()  # Updated class name
     if price_count == 0:
         raise HTTPException(status_code=404, detail="No prices available")
 
     price_id = (product.id % price_count) + 1
-    price_obj = db.query(Price).filter(Price.id == price_id).first()
+    price_obj = db.query(AmazonPrice).filter(AmazonPrice.id == price_id).first()  # Updated class name
 
     if not price_obj:
         raise HTTPException(status_code=404, detail="Price not found")
 
-    return {            "unit_price": price_obj.price   }
-
+    return {"unit_price": price_obj.price}
 
 @router.get("/name_from_id")
 async def name_from_id(
@@ -99,7 +98,7 @@ async def name_from_id(
     amazon_product = db.query(Amazon).filter(Amazon.id == id).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
+
     return {"id": id, "name": amazon_product.name}
 
 @router.get("/id_from_name")
@@ -111,9 +110,8 @@ async def id_from_name(
     amazon_product = db.query(Amazon).filter(Amazon.name == name).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    return {"name": name, "id": amazon_product.id}
 
+    return {"name": name, "id": amazon_product.id}
 
 @router.post("/stock_by_id")
 async def stock_by_id(
@@ -124,11 +122,9 @@ async def stock_by_id(
     amazon_product = db.query(Amazon).filter(Amazon.id == id).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    total_stock = random.randint(5, 100)    
+
+    total_stock = random.randint(5, 100)
     return total_stock
-
-
 
 @router.post("/delivery_status")
 async def delivery_status(
@@ -143,7 +139,7 @@ async def delivery_status(
     }
 
     # Check deliverability for the pincode
-    delivery_info = db.query(Deliverable).filter(Deliverable.pincode == pincode).first()
+    delivery_info = db.query(AmazonDeliverable).filter(AmazonDeliverable.pincode == pincode).first()  # Updated class name
 
     if not delivery_info:
         status = -1
@@ -156,38 +152,10 @@ async def delivery_status(
         "message": f"Delivery status to pincode '{pincode}': {messages[status]}",
         "status_code": status
     }
-
-@router.post("/discount")
-async def calculate_discount(
-    quantity: int,
-    name: Optional[str] = None,
-    id: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
-    if not name and not id:
-        raise HTTPException(status_code=400, detail="Either 'name' or 'id' must be provided")
-
-    # Get product
-    if name:
-        product = db.query(Amazon).filter(Amazon.name == name).first()
-    else:
-        product = db.query(Amazon).filter(Amazon.id == id).first()
-
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    total_cost = product.price * quantity
-
-    # Get discount
-    discount = db.query(Discount).filter(
-        Discount.cost_from <= total_cost,
-        Discount.cost_to > total_cost
-    ).first()
-
-    discount_percent = discount.percent_off if discount else 0
-    discounted_price = total_cost * (1 - discount_percent / 100)
-
-    return {
-        "original_price": total_cost,
-        "discounted_price": discounted_price
-    }
+@router.post("/get_discount")
+async def get_discount(    total_price: float,    db: Session = Depends(get_db)):
+    discount = db.query(AmazonDiscount).filter(AmazonDiscount.cost_from <= total_price,  AmazonDiscount.cost_to > total_price).first()
+    percent = discount.percent_off if discount else 0
+    reduced_amount = (percent / 100) * total_price
+    payable_amount = total_price - reduced_amount
+    return {"discount_percent": percent,"reduced_amount": round(reduced_amount, 2),"payable_amount": round(payable_amount, 2) }

@@ -63,7 +63,7 @@ class Discount(DiscountBase):
         from_attributes = True
 
 # Seeding data - Insert only once
-sapna_SEED_DATA = [
+SAPNA_SEED_DATA = [
     # Python books
     {'sapna_id': 'py_001', 'name': 'Python Crash Course', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 1},
     {'sapna_id': 'py_002', 'name': 'Automate the Boring Stuff with Python', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 2},
