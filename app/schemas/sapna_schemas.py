@@ -16,7 +16,7 @@ class sapna(sapnaBase):
     id: int
     sapna_id: str
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -29,7 +29,7 @@ class PriceCreate(PriceBase):
 class Price(PriceBase):
     id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -43,7 +43,7 @@ class DeliverableCreate(DeliverableBase):
 class Deliverable(DeliverableBase):
     id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -58,11 +58,11 @@ class DiscountCreate(DiscountBase):
 class Discount(DiscountBase):
     id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
-
 # Seeding data - Insert only once
+        
 sapna_SEED_DATA = [
     # Python books
     {'sapna_id': 'py_001', 'name': 'Python Crash Course', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 1},

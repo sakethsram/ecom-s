@@ -16,7 +16,7 @@ class Amazon(AmazonBase):
     id: int
     amazon_id: str
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -29,7 +29,7 @@ class PriceCreate(PriceBase):
 class Price(PriceBase):
     id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -43,7 +43,7 @@ class DeliverableCreate(DeliverableBase):
 class Deliverable(DeliverableBase):
     id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -58,31 +58,31 @@ class DiscountCreate(DiscountBase):
 class Discount(DiscountBase):
     id: int
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 # Seeding data - Insert only once
 AMAZON_SEED_DATA = [
     # Python books
-    {'amazon_id': 'py_001', 'name': 'Python Crash Course', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 1},
-    {'amazon_id': 'py_002', 'name': 'Automate the Boring Stuff with Python', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 2},
-    {'amazon_id': 'py_003', 'name': 'Effective Python', 'publisher': 'Addison-Wesley', 'genre': 'python', 'subject_code': 'py', 'serial_number': 3},
-    
+    {'amazon_id': 'py_001', 'name': 'Python Crash Course', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 1, 'price': 599.99},
+    {'amazon_id': 'py_002', 'name': 'Automate the Boring Stuff with Python', 'publisher': 'No Starch Press', 'genre': 'python', 'subject_code': 'py', 'serial_number': 2, 'price': 799.99},
+    {'amazon_id': 'py_003', 'name': 'Effective Python', 'publisher': 'Addison-Wesley', 'genre': 'python', 'subject_code': 'py', 'serial_number': 3, 'price': 999.99},
+
     # Java books
-    {'amazon_id': 'java_001', 'name': 'Java: The Complete Reference', 'publisher': 'Oracle Press', 'genre': 'java', 'subject_code': 'java', 'serial_number': 1},
-    {'amazon_id': 'java_002', 'name': 'Effective Java', 'publisher': 'Addison-Wesley', 'genre': 'java', 'subject_code': 'java', 'serial_number': 2},
-    {'amazon_id': 'java_003', 'name': 'Head First Java', 'publisher': "O'Reilly Media", 'genre': 'java', 'subject_code': 'java', 'serial_number': 3},
-    
+    {'amazon_id': 'java_001', 'name': 'Java: The Complete Reference', 'publisher': 'Oracle Press', 'genre': 'java', 'subject_code': 'java', 'serial_number': 1, 'price': 1299.99},
+    {'amazon_id': 'java_002', 'name': 'Effective Java', 'publisher': 'Addison-Wesley', 'genre': 'java', 'subject_code': 'java', 'serial_number': 2, 'price': 1499.99},
+    {'amazon_id': 'java_003', 'name': 'Head First Java', 'publisher': "O'Reilly Media", 'genre': 'java', 'subject_code': 'java', 'serial_number': 3, 'price': 1699.99},
+
     # Data Structures and Algorithms books
-    {'amazon_id': 'dsa_001', 'name': 'Introduction to Algorithms', 'publisher': 'MIT Press', 'genre': 'data_structures_algorithms', 'subject_code': 'dsa', 'serial_number': 1},
-    {'amazon_id': 'dsa_002', 'name': 'Algorithms Unlocked', 'publisher': 'MIT Press', 'genre': 'data_structures_algorithms', 'subject_code': 'dsa', 'serial_number': 2},
-    {'amazon_id': 'dsa_003', 'name': 'Data Structures and Algorithms in Python', 'publisher': 'Wiley', 'genre': 'data_structures_algorithms', 'subject_code': 'dsa', 'serial_number': 3},
-    
+    {'amazon_id': 'dsa_001', 'name': 'Introduction to Algorithms', 'publisher': 'MIT Press', 'genre': 'data_structures_algorithms', 'subject_code': 'dsa', 'serial_number': 1, 'price': 1899.99},
+    {'amazon_id': 'dsa_002', 'name': 'Algorithms Unlocked', 'publisher': 'MIT Press', 'genre': 'data_structures_algorithms', 'subject_code': 'dsa', 'serial_number': 2, 'price': 2099.99},
+    {'amazon_id': 'dsa_003', 'name': 'Data Structures and Algorithms in Python', 'publisher': 'Wiley', 'genre': 'data_structures_algorithms', 'subject_code': 'dsa', 'serial_number': 3, 'price': 2299.99},
+
     # Artificial Intelligence and Machine Learning books
-    {'amazon_id': 'aiml_001', 'name': 'Hands-On Machine Learning', 'publisher': "O'Reilly Media", 'genre': 'artificial_intelligence_machine_learning', 'subject_code': 'aiml', 'serial_number': 1},
-    {'amazon_id': 'aiml_002', 'name': 'Pattern Recognition and Machine Learning', 'publisher': 'Springer', 'genre': 'artificial_intelligence_machine_learning', 'subject_code': 'aiml', 'serial_number': 2},
-    {'amazon_id': 'aiml_003', 'name': 'Deep Learning', 'publisher': 'MIT Press', 'genre': 'artificial_intelligence_machine_learning', 'subject_code': 'aiml', 'serial_number': 3},
+    {'amazon_id': 'aiml_001', 'name': 'Hands-On Machine Learning', 'publisher': "O'Reilly Media", 'genre': 'artificial_intelligence_machine_learning', 'subject_code': 'aiml', 'serial_number': 1, 'price': 2499.99},
+    {'amazon_id': 'aiml_002', 'name': 'Pattern Recognition and Machine Learning', 'publisher': 'Springer', 'genre': 'artificial_intelligence_machine_learning', 'subject_code': 'aiml', 'serial_number': 2, 'price': 2699.99},
+    {'amazon_id': 'aiml_003', 'name': 'Deep Learning', 'publisher': 'MIT Press', 'genre': 'artificial_intelligence_machine_learning', 'subject_code': 'aiml', 'serial_number': 3, 'price': 2899.99},
 ]
 
 PRICE_SEED_DATA = [
@@ -106,6 +106,11 @@ DELIVERABLE_SEED_DATA = [
     {'pincode': '560001', 'delivery_time': 4},  # 4 days
     {'pincode': '700001', 'delivery_time': 5},  # 5 days
     {'pincode': '600001', 'delivery_time': 3},  # 3 days
+    {'pincode': '110002', 'delivery_time': 1},  # Same day delivery
+    {'pincode': '400002', 'delivery_time': 1},  # Same day delivery
+    {'pincode': '560002', 'delivery_time': 2},  # 2 days
+    {'pincode': '700002', 'delivery_time': 4},  # 4 days
+    {'pincode': '600002', 'delivery_time': 3},  # 3 days
 ]
 
 DISCOUNT_SEED_DATA = [

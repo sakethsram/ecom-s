@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db, engine, SessionLocal
+from app.database import get_amazon_db, amazon_engine, AmazonSessionLocal
 from app.models import amazon_models
 from app.models.amazon_models import Amazon, Price, Deliverable, Discount
 from app.schemas.amazon_schemas import (
-    AMAZON_SEED_DATA, 
-    PRICE_SEED_DATA, 
-    DELIVERABLE_SEED_DATA, 
+    AMAZON_SEED_DATA,
+    PRICE_SEED_DATA,
+    DELIVERABLE_SEED_DATA,
     DISCOUNT_SEED_DATA
 )
 from typing import Optional
@@ -16,7 +16,7 @@ router = APIRouter()
 
 def seed_database():
     """Seed the database with initial data"""
-    db = SessionLocal()
+    db = AmazonSessionLocal()
     try:
         # Check if data already exists
         if db.query(Amazon).count() == 0:
@@ -24,36 +24,36 @@ def seed_database():
             for item in AMAZON_SEED_DATA:
                 amazon_product = Amazon(**item)
                 db.add(amazon_product)
-            
+
         if db.query(Price).count() == 0:
             # Seed Prices
             for item in PRICE_SEED_DATA:
                 price = Price(**item)
                 db.add(price)
-            
+
         if db.query(Deliverable).count() == 0:
             # Seed Deliverables
             for item in DELIVERABLE_SEED_DATA:
                 deliverable = Deliverable(**item)
                 db.add(deliverable)
-            
+
         if db.query(Discount).count() == 0:
             # Seed Discounts
             for item in DISCOUNT_SEED_DATA:
                 discount = Discount(**item)
                 db.add(discount)
-        
+
         db.commit()
-        print("Database seeded successfully!")
-        
+        print("Amazon database seeded successfully!")
+
     except Exception as e:
-        print(f"Error seeding database: {e}")
+        print(f"Error seeding Amazon database: {e}")
         db.rollback()
     finally:
         db.close()
 
 # Create database tables and seed data
-amazon_models.Base.metadata.create_all(bind=engine)
+amazon_models.Base.metadata.create_all(bind=amazon_engine)
 seed_database()
 
 @router.get("/")
@@ -64,11 +64,11 @@ async def amazon_root():
 async def get_price(
     id: Optional[str] = None,
     book_name: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_amazon_db)
 ):
     if not id and not book_name:
         raise HTTPException(status_code=400, detail="Provide either 'id' or 'book_name'")
-    
+
     if id:
         product = db.query(Amazon).filter(Amazon.id == id).first()
     else:
@@ -87,53 +87,49 @@ async def get_price(
     if not price_obj:
         raise HTTPException(status_code=404, detail="Price not found")
 
-    return {            "unit_price": price_obj.price   }
-
+    return {"unit_price": price_obj.price}
 
 @router.get("/name_from_id")
 async def name_from_id(
     id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_amazon_db)
 ):
     """Return product name given the Amazon ID"""
     amazon_product = db.query(Amazon).filter(Amazon.id == id).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
+
     return {"id": id, "name": amazon_product.name}
 
 @router.get("/id_from_name")
 async def id_from_name(
     name: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_amazon_db)
 ):
     """Return Amazon ID given the product name"""
     amazon_product = db.query(Amazon).filter(Amazon.name == name).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    return {"name": name, "id": amazon_product.id}
 
+    return {"name": name, "id": amazon_product.id}
 
 @router.post("/stock_by_id")
 async def stock_by_id(
     id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_amazon_db)
 ):
     """Tell me how much stock you have for this book id — I want it all!"""
     amazon_product = db.query(Amazon).filter(Amazon.id == id).first()
     if not amazon_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    total_stock = random.randint(5, 100)    
+
+    total_stock = random.randint(5, 100)
     return total_stock
-
-
 
 @router.post("/delivery_status")
 async def delivery_status(
     pincode: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_amazon_db)
 ):
     # Delivery messages mapping
     messages = {
@@ -162,7 +158,7 @@ async def calculate_discount(
     quantity: int,
     name: Optional[str] = None,
     id: Optional[str] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_amazon_db)
 ):
     if not name and not id:
         raise HTTPException(status_code=400, detail="Either 'name' or 'id' must be provided")

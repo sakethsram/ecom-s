@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_sapna_db, sapna_engine, SapnaSessionLocal
+from app.database import get_sapna_db, sapna_engine, sapnaSessionLocal
 from app.models import sapna_models
 from app.models.sapna_models import sapna, Price, Deliverable, Discount
 from app.schemas.sapna_schemas import (
@@ -16,7 +16,7 @@ router = APIRouter()
 
 def seed_database():
     """Seed the database with initial data"""
-    db = SapnaSessionLocal()
+    db = sapnaSessionLocal()
     try:
         # Check if data already exists
         if db.query(sapna).count() == 0:
@@ -44,7 +44,7 @@ def seed_database():
                 db.add(discount)
 
         db.commit()
-        print("Sapna database seeded successfully!")
+        print("sapna database seeded successfully!")
 
     except Exception as e:
         print(f"Error seeding sapna database: {e}")
@@ -58,8 +58,7 @@ seed_database()
 
 @router.get("/")
 async def sapna_root():
-    return {"message": "Sapna Management System API - All endpoints ready!"}
-
+    return {"message": "sapna Management System API - All endpoints ready!"}
 
 @router.post("/get_price")
 async def get_price(
@@ -69,7 +68,7 @@ async def get_price(
 ):
     if not id and not book_name:
         raise HTTPException(status_code=400, detail="Provide either 'id' or 'book_name'")
-    
+
     if id:
         product = db.query(sapna).filter(sapna.id == id).first()
     else:
@@ -88,8 +87,7 @@ async def get_price(
     if not price_obj:
         raise HTTPException(status_code=404, detail="Price not found")
 
-    return {            "unit_price": price_obj.price   }
-
+    return {"unit_price": price_obj.price}
 
 @router.get("/name_from_id")
 async def name_from_id(
@@ -100,9 +98,8 @@ async def name_from_id(
     sapna_product = db.query(sapna).filter(sapna.id == id).first()
     if not sapna_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    return {"id": id, "name": sapna_product.name}
 
+    return {"id": id, "name": sapna_product.name}
 
 @router.get("/id_from_name")
 async def id_from_name(
@@ -113,9 +110,8 @@ async def id_from_name(
     sapna_product = db.query(sapna).filter(sapna.name == name).first()
     if not sapna_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    return {"name": name, "id": sapna_product.id}
 
+    return {"name": name, "id": sapna_product.id}
 
 @router.post("/stock_by_id")
 async def stock_by_id(
@@ -126,8 +122,8 @@ async def stock_by_id(
     sapna_product = db.query(sapna).filter(sapna.id == id).first()
     if not sapna_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    total_stock = random.randint(5, 100)    
+
+    total_stock = random.randint(5, 100)
     return total_stock
 
 @router.post("/delivery_status")

@@ -18,14 +18,14 @@ app.add_middleware(
 
 # Include routers
 app.include_router(amazon_router, prefix="/amazon", tags=["Amazon"])
-app.include_router(flipkart_router, prefix="/flipkart", tags=["Flipkart"])
-app.include_router(sapna_router, prefix="/sapna", tags=["Sapna"])
+app.include_router(flipkart_router, prefix="/flipkart", tags=["flipkart"])
+app.include_router(sapna_router, prefix="/sapna", tags=["sapna"])
 
 @app.get("/")
 async def root():
     return {
         "message": "Multi-Store Management System API",
-        "available_stores": ["Amazon", "Flipkart", "Sapna"],
+        "available_stores": ["Amazon", "flipkart", "sapna"],
         "endpoints": {
             "amazon": "/amazon/",
             "flipkart": "/flipkart/",
@@ -39,5 +39,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=True,
-        log_level="debug"
+        log_level="info"
     )

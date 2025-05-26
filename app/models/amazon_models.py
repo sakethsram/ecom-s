@@ -1,11 +1,11 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.database import Base  # Correct relative import
+from app.database import Base
 
 class Amazon(Base):
-    __tablename__ = "amazons"
-    
+    __tablename__ = "amazon_books"
+
     id = Column(Integer, primary_key=True, index=True)
     amazon_id = Column(String(50), unique=True, index=True, nullable=False)
     name = Column(String(255), nullable=False)
@@ -13,26 +13,27 @@ class Amazon(Base):
     genre = Column(String(100), nullable=False)
     subject_code = Column(String(10), nullable=False)
     serial_number = Column(Integer, nullable=False)
+    price = Column(Float, nullable=False, default=0.0)  # Added price field
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Price(Base):
-    __tablename__ = "prices"
-    
+    __tablename__ = "amazon_prices"
+
     id = Column(Integer, primary_key=True, index=True)
     price = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Deliverable(Base):
-    __tablename__ = "deliverables"
-    
+    __tablename__ = "amazon_deliverables"
+
     id = Column(Integer, primary_key=True, index=True)
     pincode = Column(String(10), nullable=False)
     delivery_time = Column(Integer, nullable=False)  # in days
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Discount(Base):
-    __tablename__ = "discounts"
-    
+    __tablename__ = "amazon_discounts"
+
     id = Column(Integer, primary_key=True, index=True)
     cost_from = Column(Float, nullable=False)
     cost_to = Column(Float, nullable=False)

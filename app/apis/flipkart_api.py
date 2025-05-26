@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_flipkart_db, flipkart_engine, FlipkartSessionLocal
+from app.database import get_flipkart_db, flipkart_engine, flipkartSessionLocal
 from app.models import flipkart_models
 from app.models.flipkart_models import flipkart, Price, Deliverable, Discount
 from app.schemas.flipkart_schemas import (
@@ -16,7 +16,7 @@ router = APIRouter()
 
 def seed_database():
     """Seed the database with initial data"""
-    db = FlipkartSessionLocal()
+    db = flipkartSessionLocal()
     try:
         # Check if data already exists
         if db.query(flipkart).count() == 0:
@@ -44,7 +44,7 @@ def seed_database():
                 db.add(discount)
 
         db.commit()
-        print("Flipkart database seeded successfully!")
+        print("flipkart database seeded successfully!")
 
     except Exception as e:
         print(f"Error seeding flipkart database: {e}")
@@ -58,7 +58,7 @@ seed_database()
 
 @router.get("/")
 async def flipkart_root():
-    return {"message": "Flipkart Management System API - All endpoints ready!"}
+    return {"message": "flipkart Management System API - All endpoints ready!"}
 
 @router.post("/get_price")
 async def get_price(
@@ -68,7 +68,7 @@ async def get_price(
 ):
     if not id and not book_name:
         raise HTTPException(status_code=400, detail="Provide either 'id' or 'book_name'")
-    
+
     if id:
         product = db.query(flipkart).filter(flipkart.id == id).first()
     else:
@@ -87,8 +87,7 @@ async def get_price(
     if not price_obj:
         raise HTTPException(status_code=404, detail="Price not found")
 
-    return {            "unit_price": price_obj.price   }
-
+    return {"unit_price": price_obj.price}
 
 @router.get("/name_from_id")
 async def name_from_id(
@@ -99,9 +98,8 @@ async def name_from_id(
     flipkart_product = db.query(flipkart).filter(flipkart.id == id).first()
     if not flipkart_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    return {"id": id, "name": flipkart_product.name}
 
+    return {"id": id, "name": flipkart_product.name}
 
 @router.get("/id_from_name")
 async def id_from_name(
@@ -112,9 +110,8 @@ async def id_from_name(
     flipkart_product = db.query(flipkart).filter(flipkart.name == name).first()
     if not flipkart_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    return {"name": name, "id": flipkart_product.id}
 
+    return {"name": name, "id": flipkart_product.id}
 
 @router.post("/stock_by_id")
 async def stock_by_id(
@@ -125,47 +122,9 @@ async def stock_by_id(
     flipkart_product = db.query(flipkart).filter(flipkart.id == id).first()
     if not flipkart_product:
         raise HTTPException(status_code=404, detail="Product not found")
-    
-    total_stock = random.randint(5, 100)    
+
+    total_stock = random.randint(5, 100)
     return total_stock
-
-
-@router.post("/delivery_status")
-async def delivery_status(
-    name: Optional[str] = None,
-    id: Optional[str] = None,
-    
-):
-    if not name and not id:
-        raise HTTPException(status_code=400, detail="Either 'name' or 'id' must be provided")
-
-    # Fetch product by name or id
-    if name:
-        flipkart_product = db.query(flipkart).filter(flipkart.name == name).first()
-    else:
-        flipkart_product = db.query(flipkart).filter(flipkart.id == id).first()
-
-    if not flipkart_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    # Delivery status messages
-    messages = { 1: "Can be delivered today",0: "Deliverable", -1: "Not deliverable"  }
-
-    # Check delivery info using pincode
-    delivery_info = db.query(Deliverable).filter(Deliverable.pincode == flipkart_product.pincode).first()
-
-    if not delivery_info:        status = -1
-    elif delivery_info.delivery_time == 1:
-        status = 1
-    else:        status = 0
-
-    identifier = name if name else id
-
-    return {
-        "message": f"Delivery status for '{identifier}': {messages[status]}",
-        "status_code": status
-    }
-
 
 @router.post("/delivery_status")
 async def delivery_status(
