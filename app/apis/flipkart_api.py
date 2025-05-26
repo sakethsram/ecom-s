@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_flipkart_db, flipkart_engine, flipkartSessionLocal
+from app.database import get_flipkart_db, flipkart_engine, flipkartsessionlocal
 from app.models import flipkart_models
 from app.models.flipkart_models import flipkart, Price, Deliverable, Discount
 from app.schemas.flipkart_schemas import (
@@ -16,7 +16,7 @@ router = APIRouter()
 
 def seed_database():
     """Seed the database with initial data"""
-    db = flipkartSessionLocal()
+    db = flipkartsessionlocal()
     try:
         # Check if data already exists
         if db.query(flipkart).count() == 0:
