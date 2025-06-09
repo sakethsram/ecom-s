@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db, engine, SessionLocal
 from app.models import flipkart_models
-from app.models.flipkart_models import Flipkart, Price, Deliverable, Discount
+from app.models.flipkart_models import Flipkart, Price , Deliverable, Discount
 from app.schemas.flipkart_schemas import (
     FLIPKART_SEED_DATA,
     PRICE_SEED_DATA,
@@ -60,9 +60,34 @@ seed_flipkart_database()
 async def flipkart_root():
     return {"message": "Flipkart Management System API - All endpoints ready!"}
 
+
+@router.get("/id_or_name")
+async def id_or_name_lookup(
+    id: Optional[int] = None,
+    name: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Return product name given the ID, or ID given the name.
+    At least one of the parameters ('id' or 'name') is required.
+    """
+    if not id and not name:
+        raise HTTPException(status_code=400, detail="Provide either 'id' or 'name'")
+
+    if id:
+        product = db.query(Flipkart).filter(Flipkart.id == id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return {"id": product.id, "name": product.name}
+
+    if name:
+        product = db.query(Flipkart).filter(Flipkart.name == name).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return {"id": product.id, "name": product.name}
 @router.post("/get_price")
 async def get_price(
-    id: Optional[str] = None,
+    id: Optional[int] = None,  # Use int, as `Flipkart.id` is Integer
     book_name: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
@@ -77,85 +102,119 @@ async def get_price(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    price_count = db.query(Price).count()  # Updated class name
+    price_count = db.query(Price).count()
     if price_count == 0:
         raise HTTPException(status_code=404, detail="No prices available")
 
+    # Deterministic mapping of product to price (as in your logic)
     price_id = (product.id % price_count) + 1
-    price_obj = db.query(Price).filter(Price.id == price_id).first()  # Updated class name
+    price_obj = db.query(Price).filter(Price.id == price_id).first()
 
     if not price_obj:
         raise HTTPException(status_code=404, detail="Price not found")
 
-    return {"unit_price": price_obj.price}
-
-@router.get("/name_from_id")
-async def name_from_id(
-    id: str,
-    db: Session = Depends(get_db)
-):
-    """Return product name given the Flipkart ID"""
-    flipkart_product = db.query(Flipkart).filter(Flipkart.id == id).first()
-    if not flipkart_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    return {"id": id, "name": flipkart_product.name}
-
-@router.get("/id_from_name")
-async def id_from_name(
-    name: str,
-    db: Session = Depends(get_db)
-):
-    """Return Flipkart ID given the product name"""
-    flipkart_product = db.query(Flipkart).filter(Flipkart.name == name).first()
-    if not flipkart_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    return {"name": name, "id": flipkart_product.id}
+    return {
+        "Flipkart_id": product.flipkart_id,
+        "name": product.name,
+        "unit_price": price_obj.price
+    }
 
 @router.post("/stock_by_id")
 async def stock_by_id(
     id: str,
     db: Session = Depends(get_db)
 ):
-    """Tell me how much stock you have for this book id — I want it all!"""
-    flipkart_product = db.query(Flipkart).filter(Flipkart.id == id).first()
-    if not flipkart_product:
+    Flipkart_product = db.query(Flipkart).filter(Flipkart.id == id).first()
+    if not Flipkart_product:
         raise HTTPException(status_code=404, detail="Product not found")
 
     total_stock = random.randint(5, 100)
     return total_stock
 
-@router.post("/delivery_status")
-async def delivery_status(
-    pincode: str,
+
+@router.post("/get_discount")
+async def get_discount(
+    id: int,  # Book ID is required
+    quantity: int,  # Quantity is required
     db: Session = Depends(get_db)
 ):
-    # Delivery messages mapping
-    messages = {
-        1: "Can be delivered today",
-        0: "Deliverable",
-        -1: "Not deliverable"
-    }
+    # Fetch the book by ID
+    product = db.query(Flipkart).filter(Flipkart.id == id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
 
-    # Check deliverability for the pincode
-    delivery_info = db.query(Deliverable).filter(Deliverable.pincode == pincode).first()  # Updated class name
+    # Fetch unit price for the book
+    price_count = db.query(Price).count()
+    if price_count == 0:
+        raise HTTPException(status_code=404, detail="No prices available")
 
-    if not delivery_info:
-        status = -1
-    elif delivery_info.delivery_time == 1:
-        status = 1
-    else:
-        status = 0
+    # Determine the price_id (same logic as earlier)
+    price_id = (product.id % price_count) + 1
+    price_obj = db.query(Price).filter(Price.id == price_id).first()
 
-    return {
-        "message": f"Delivery status to pincode '{pincode}': {messages[status]}",
-        "status_code": status
-    }
-@router.post("/get_discount")
-async def get_discount(    total_price: float,    db: Session = Depends(get_db)):
-    discount = db.query(Discount).filter(Discount.cost_from <= total_price,  Discount.cost_to > total_price).first()
+    if not price_obj:
+        raise HTTPException(status_code=404, detail="Price not found")
+
+    unit_price = price_obj.price
+    total_price = unit_price * quantity
+
+    # Find applicable discount
+    discount = db.query(Discount).filter(
+        Discount.cost_from <= total_price,
+        Discount.cost_to > total_price
+    ).first()
+
     percent = discount.percent_off if discount else 0
     reduced_amount = (percent / 100) * total_price
     payable_amount = total_price - reduced_amount
-    return {"discount_percent": percent,"reduced_amount": round(reduced_amount, 2),"payable_amount": round(payable_amount, 2) }
+
+    return {
+        "book_id": id,
+        "quantity": quantity,
+        "unit_price": round(unit_price, 2),
+        "total_price": round(total_price, 2),
+        "discount_percent": percent,
+        "reduced_amount": round(reduced_amount, 2),
+        "payable_amount": round(payable_amount, 2)
+    }
+
+
+# @router.get("/get_books_from_flipakart")
+# def get_books_from_flipakart():
+#     return {
+#         "flip_1": {
+#             "name": "Clean Code",
+#             "publisher": "Prentice Hall",
+#             "genre": "Programming",
+#             "subject_code": "CS101",
+#             "serial_number": 3001
+#         },
+#         "flip_2": {
+#             "name": "Python Crash Course",
+#             "publisher": "No Starch Press",
+#             "genre": "Programming",
+#             "subject_code": "PY202",
+#             "serial_number": 3002
+#         },
+#         "flip_3": {
+#             "name": "Flipkart Daily Deal Book",
+#             "publisher": "Flipkart Press",
+#             "genre": "Special Offer",
+#             "subject_code": "FD301",
+#             "serial_number": 3003
+#         },
+#         "flip_4": {
+#             "name": "E-commerce Strategies",
+#             "publisher": "Digital Marketing Press",
+#             "genre": "Business",
+#             "subject_code": "EC401",
+#             "serial_number": 3004
+#         },
+#         "flip_5": {
+#             "name": "Budget Coding Books",
+#             "publisher": "Affordable Press",
+#             "genre": "Programming",
+#             "subject_code": "BC501",
+#             "serial_number": 3005
+#         }
+#     }

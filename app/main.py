@@ -1,43 +1,14 @@
-import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.apis.amazon_api import router as amazon_router
-from app.apis.flipkart_api import router as flipkart_router
-from app.apis.sapna_api import router as sapna_router
+import os
+import subprocess
 
-app = FastAPI()
+# Define the commands to run each script in a new terminal
+commands = [
+    'gnome-terminal -- bash -c "python3 amazon_main.py; exec bash"',
+    'gnome-terminal -- bash -c "python3 flipkart_main.py; exec bash"',
+    'gnome-terminal -- bash -c "python3 sapna_main.py; exec bash"',
+]
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+for cmd in commands:
+    subprocess.Popen(cmd, shell=True)
 
-# Include routers
-app.include_router(amazon_router, prefix="/amazon", tags=["Amazon"])
-app.include_router(flipkart_router, prefix="/flipkart", tags=["Flipkart"])
-app.include_router(sapna_router, prefix="/sapna", tags=["Sapna"])
-
-@app.get("/")
-async def root():
-    return {
-        "message": "Multi-Store Management System API",
-        "available_stores": ["Amazon", "Flipkart", "Sapna"],
-        "endpoints": {
-            "amazon": "/amazon/",
-            "flipkart": "/flipkart/",
-            "sapna": "/sapna/"
-        }
-    }
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="debug"
-    )
+print("Launched amazon_main.py, flipkart_main.py, and sapna_main.py in new terminals.")
